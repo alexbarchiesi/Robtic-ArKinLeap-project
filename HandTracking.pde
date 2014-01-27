@@ -39,19 +39,29 @@ void getData()
   //Store Position into a vector
   Vector handPosition = hand.palmPosition();
   
+  int averageAngleHand = 0;
+  
   for( Finger finger : mFingers) {
     
     Vector position = finger.tipPosition();
     
+    
     PVector handFinger = new PVector(handPosition.getX() - position.getX(),
                                      handPosition.getY() - position.getY(),
                                      position.getZ() - handPosition.getZ());
+                                     
+    averageAngleHand += getAngle(handFinger, new PVector(-1,0,0));                                 
     
     PVector fingerVect = new PVector( this.mHand.x + handFinger.x,
                                       this.mHand.y + handFinger.y,
                                       this.mHand.z + handFinger.z);                               
     this.mFingersData.add(fingerVect);
   }
+  
+  if(leapMode && this.mFingersData.size()> 0) {
+    this.mAngles.add(averageAngleHand/this.mFingersData.size());
+  }
+  
 }
 
 void drawFingers(PGraphics pgr)

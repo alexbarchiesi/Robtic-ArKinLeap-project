@@ -2,10 +2,15 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
 void sendToArduino(){  
- 
-     port.write(mAngles.get(0) + "q");
-     port.write(mAngles.get(1) + "w");
-     port.write(mAngles.get(2) + "d");
+
+  println(mAngles);
+     //port.write(mAngles.get(1) + "q");
+     port.write(180 - mAngles.get(0) + "f");
+     if(mAngles.size() == 3){
+       port.write(180 - mAngles.get(2) + "w");
+     }
+     port.write(mAngles.get(1) + "d");
+
      
            
 }

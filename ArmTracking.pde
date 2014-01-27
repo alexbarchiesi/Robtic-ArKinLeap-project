@@ -6,7 +6,7 @@ private SimpleOpenNI mKinect;
 /**
 * Average value for the buffers
 */
-private final static int NUM_AVRG = 10;
+private final static int NUM_AVRG = 20;
 /**
 * Buffer contain the NUM_AVRG values of ShoulderElbow x coordinate
 */
@@ -44,7 +44,8 @@ private ArrayList<ArrayList<Float>> mEHBuffers = new ArrayList<ArrayList<Float>>
 */
 private ArrayList<PVector> mData;
 private ArrayList<PVector> mVectors;
-private ArrayList<Integer> mAngles;
+private ArrayList<Integer> mAngles ; //= new ArrayList<Integer>();
+private ArrayList<Integer> mCalculateAngles;
 
 private final static int MAX_ANGLE = 180;
 private final static int MIN_ANGLE = 10;
@@ -55,6 +56,10 @@ private PVector mShoulderJointCoord = new PVector(mShoulderJointX,mShoulderJoint
 private String[] mAnglesLabel = { "Elbow angle : ","shoulderXY angle : ","shoulderXZ angle : "};
 
 private PFont f; 
+
+private final static int MIN_DIFF_ANGLE = 5;
+private boolean stop = false;
+private boolean leapMode =false;
 
 void armSetUp()
 {
@@ -87,15 +92,20 @@ void getArmData(int userID)
   PVector shoulder = new PVector();
   PVector elbow = new PVector();
   PVector hand = new PVector();
+  PVector cancelHand = new PVector();
   
   this.mData = new ArrayList<PVector>();
   this.mVectors = new ArrayList<PVector>();
+  this.mCalculateAngles = new ArrayList<Integer>();
   this.mAngles = new ArrayList<Integer>();
+  
 
   // Gathering informations from kinect
   mKinect.getJointPositionSkeleton(userID,SimpleOpenNI.SKEL_LEFT_SHOULDER, shoulder);
   mKinect.getJointPositionSkeleton(userID, SimpleOpenNI.SKEL_LEFT_ELBOW,elbow);
   mKinect.getJointPositionSkeleton(userID, SimpleOpenNI.SKEL_LEFT_HAND,hand);
+  mKinect.getJointPositionSkeleton(userID, SimpleOpenNI.SKEL_RIGHT_HAND, cancelHand);
+  
   
   //Calculate position for drawing 
   PVector SELine = new PVector(mShoulderJointX - (shoulder.x - elbow.x),
@@ -120,13 +130,35 @@ void getArmData(int userID)
   PVector tmp = new PVector();
   
   PVector.mult(this.mVectors.get(0),-1,tmp);
+
   
-  this.mAngles.add(getAngle(tmp,this.mVectors.get(1)));
-  this.mAngles.add(getAngle(mZUnitVector,this.mVectors.get(2)));
-  this.mAngles.add(getAngle(mYUnitVector,this.mVectors.get(3)));
-  sendAngle();
+  this.mCalculateAngles.add(getAngle(tmp,this.mVectors.get(1)));
+  this.mCalculateAngles.add(getAngle(mYUnitVector,this.mVectors.get(3)));
+  if (!leapMode){
+     this.mCalculateAngles.add(getAngle(mZUnitVector,this.mVectors.get(2)));
+  }
+  
+  
+
+  for(Integer i : this.mCalculateAngles){
+    this.mAngles.add(i);
+  }
+ 
+  if(!stop){
+//    if(Math.abs((cancelHand.x+cancelHand.y+cancelHand.z) - (hand.x + hand.y + hand.z)) < 2){
+
+  if(hand.x > cancelHand.x){
+      this.mAngles.clear();
+      this.mAngles.add(90);
+      this.mAngles.add(90);
+      this.mAngles.add(180);
+      this.stop = true;
+    } 
+  
+  
   setUpHand(this.mData.get(1));
-  
+  sendAngle();
+ }
   
 }
 
@@ -141,9 +173,9 @@ void sendAngle()
      this.mAngles.remove(i);
      this.mAngles.add(i,0);
    }
-   
-   sendToArduino();
  }
+   sendToArduino();
+ 
 }
 
 
@@ -204,6 +236,7 @@ void drawArm(PGraphics pgr)
     }
     pgr.strokeWeight(1);
   }
+  
 }
 
 
